@@ -1,73 +1,86 @@
 import json
 import queue
 import sys
+import os
+import subprocess
 import sounddevice as sd
 from vosk import Model, KaldiRecognizer
-import pyttsx3
-import os
 
-MODEL_PATH = "vosk-model-small-en-us-0.15"  # adjust if your folder differs
+# ======================================================
+# CONFIGURATION
+# ======================================================
+MODEL_PATH = "vosk-model-small-en-us-0.15"
 SAMPLE_RATE = 16000
 
-# ------------------------
-# 1. Load ASR model
-# ------------------------
+print("ASR_TTS program started")
+
+# ======================================================
+# CHECK MODEL
+# ======================================================
 if not os.path.exists(MODEL_PATH):
-    print(f"ERROR: Vosk model not found at {MODEL_PATH}. Download and unzip it there.")
+    print("ERROR: Vosk model not found")
     sys.exit(1)
 
+# ======================================================
+# LOAD ASR
+# ======================================================
 model = Model(MODEL_PATH)
 recognizer = KaldiRecognizer(model, SAMPLE_RATE)
 
 audio_queue = queue.Queue()
 
 def audio_callback(indata, frames, time, status):
-    """Callback from sounddevice for streaming audio to a queue."""
-    if status:
-        print("Audio status:", status, file=sys.stderr)
     audio_queue.put(bytes(indata))
 
-# ------------------------
-# 2. Text-to-Speech setup
-# ------------------------
-tts = pyttsx3.init()
-
+# ======================================================
+# WINDOWS NATIVE TTS (GUARANTEED)
+# ======================================================
 def speak(text):
     print("Assistant:", text)
-    tts.say(text)
-    tts.runAndWait()
+    ps_command = f'''
+    Add-Type -AssemblyName System.Speech;
+    $speak = New-Object System.Speech.Synthesis.SpeechSynthesizer;
+    $speak.Speak("{text}");
+    '''
+    subprocess.run(
+        ["powershell", "-Command", ps_command],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
 
-# ------------------------
-# 3. Speech Recognition loop
-# ------------------------
-def listen():
-    print("Listening... Speak now! (press Ctrl+C to stop)")
-    try:
-        with sd.RawInputStream(samplerate=SAMPLE_RATE, blocksize=8000,
-                               dtype="int16", channels=1, callback=audio_callback):
-            while True:
-                data = audio_queue.get()
-                if recognizer.AcceptWaveform(data):
-                    result = recognizer.Result()
-                    result_json = json.loads(result)
-                    # result_json contains {"text": "..."}
-                    return result_json.get("text", "")
-    except KeyboardInterrupt:
-        print("Interrupted by user")
-        return ""
-    except Exception as e:
-        print("Error in audio input:", e)
-        return ""
+# ======================================================
+# LISTEN ONCE
+# ======================================================
+def listen_once():
+    print("Listening... Speak now.")
+    with sd.RawInputStream(
+        samplerate=SAMPLE_RATE,
+        blocksize=8000,
+        dtype="int16",
+        channels=1,
+        callback=audio_callback
+    ):
+        while True:
+            data = audio_queue.get()
+            if recognizer.AcceptWaveform(data):
+                result = json.loads(recognizer.Result())
+                text = result.get("text", "").strip()
+                if text:
+                    return text
 
-# ------------------------
-# 4. Main program
-# ------------------------
+# ======================================================
+# MAIN LOOP (SEQUENTIAL)
+# ======================================================
 if __name__ == "__main__":
-    speak("Hello, I am your test assistant. Please say something.")
-    text = listen()
-    if text:
-        print("You said:", text)
-        speak("You said: " + text)
-    else:
-        print("No text recognized.")
-        speak("I did not catch that. Please try again.")
+    try:
+        speak("Hello. I am your voice assistant.")
+
+        while True:
+            user_text = listen_once()
+            print("User:", user_text)
+            speak("You said " + user_text)
+
+    except KeyboardInterrupt:
+        speak("Goodbye!")
+        print("\nProgram stopped by user.")
+        sys.exit(0)
