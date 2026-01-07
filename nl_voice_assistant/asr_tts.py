@@ -2,11 +2,13 @@
 import queue
 import sys
 import os
-import platform
-import subprocess
+import asyncio
+import tempfile
+
 import sounddevice as sd
+import soundfile as sf
 from vosk import Model, KaldiRecognizer
-import pyttsx3
+import edge_tts
 
 from assistant import handle_intent
 from nlu import parse_intent
@@ -27,18 +29,31 @@ audio_queue = queue.Queue()
 
 def audio_callback(indata, frames, time, status):
     audio_queue.put(bytes(indata))
+#---------------- TTS (WAV + sounddevice, CROSS-PLATFORM) ----------------
+async def speak_async(text):
+    print("Assistant:", text)
 
-# INIT TTS
-engine = pyttsx3.init()
-OS = platform.system()
+    voice = "en-US-AriaNeural"
+
+    # Create temporary WAV file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
+        wav_file = f.name
+
+    communicate = edge_tts.Communicate(text, voice)
+
+    # Save as WAV (no arguments in constructor, just filename)
+    await communicate.save(wav_file)
+
+    # Read WAV and play using sounddevice (cross-platform)
+    data, samplerate = sf.read(wav_file, dtype="float32")
+    sd.play(data, samplerate)
+    sd.wait()
+
+    os.remove(wav_file)
+
 
 def speak(text):
-    print("Assistant:", text)
-    if OS == "Darwin":
-        subprocess.run(["say", text])
-    else:
-        engine.say(text)
-        engine.runAndWait()
+    asyncio.run(speak_async(text))
 
 # LISTEN ONCE
 def listen_once():
