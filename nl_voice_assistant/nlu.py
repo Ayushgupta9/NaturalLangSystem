@@ -65,13 +65,27 @@ def parse_intent(text, state):
     text = text.lower().strip()
     dprint("RAW TEXT:", text)
 
-    # ---------- WEATHER (fuzzy) ----------
-    if any(w in text for w in ["weather", "rain", "temperature", "forecast", "whether"]):
+def parse_intent(text, state):
+    text = text.lower().strip()
+    dprint("RAW:", text)
+
+    # GREETINGS
+    if any(w in text for w in ["hello", "hi", "hey", "good morning", "good evening"]):
+        return {"intent": "greeting"}
+
+    if any(w in text for w in ["how are you", "how are you doing"]):
+        return {"intent": "how_are_you"}
+
+    # WEATHER
+    if any(w in text for w in ["weather", "temperature", "forecast", "whether", "rain"]):
         place = extract_place(text, state)
         day = extract_day(text, state)
+
         if "rain" in text:
             return {"intent": "check_rain", "place": place, "day": day}
+
         return {"intent": "get_weather", "place": place, "day": day}
+
 
     # ---------- DELETE (PRIORITY over create) ----------
     if any(w in text for w in ["delete", "remove", "cancel"]):
@@ -84,18 +98,18 @@ def parse_intent(text, state):
         # generic "delete the appointment", "delete my appointment"
         return {"intent": "delete_last_event"}
 
-    # ---------- CREATE APPOINTMENT ----------
+    # CREATE APPOINTMENT
     if ("add" in text or "create" in text or "and an appointment" in text):
         if "appointment" in text or "meeting" in text or "event" in text:
             title = extract_title(text)
             day = extract_day(text, state)
             return {"intent": "create_event", "title": title, "date": day}
 
-    # ---------- NEXT APPOINTMENT ----------
+    # NEXT APPOINTMENT
     if "next appointment" in text or "my next appointment" in text:
         return {"intent": "get_next_event"}
 
-    # ---------- UPDATE LOCATION ----------
+    # UPDATE LOCATION
     if "change" in text or "update" in text:
         if "location" in text or "place" in text:
             new_loc = extract_new_location(text)
