@@ -2,78 +2,88 @@
 import queue
 import sys
 import os
-import asyncio
-import tempfile
+import gc
 
 import sounddevice as sd
-import soundfile as sf
 from vosk import Model, KaldiRecognizer
-import edge_tts
+import pyttsx3
 
 from assistant import handle_intent
 from nlu import parse_intent
 
-# CONFIGURATION
+# ================= CONFIGURATION =================
 MODEL_PATH = "vosk-model-small-en-us-0.15"
 SAMPLE_RATE = 16000
+BLOCK_SIZE = 8000
 
 print("ASR_TTS program started")
 
+# ================= CHECK MODEL =================
 if not os.path.exists(MODEL_PATH):
     print("ERROR: Vosk model not found")
     sys.exit(1)
 
+# ================= ASR SETUP =================
 model = Model(MODEL_PATH)
 recognizer = KaldiRecognizer(model, SAMPLE_RATE)
 audio_queue = queue.Queue()
 
 def audio_callback(indata, frames, time, status):
+    if status:
+        print(status, file=sys.stderr)
     audio_queue.put(bytes(indata))
-#---------------- TTS (WAV + sounddevice, CROSS-PLATFORM) ----------------
-async def speak_async(text):
-    print("Assistant:", text)
 
-    voice = "en-US-AriaNeural"
-
-    # Create temporary WAV file
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
-        wav_file = f.name
-
-    communicate = edge_tts.Communicate(text, voice)
-
-    # Save as WAV (no arguments in constructor, just filename)
-    await communicate.save(wav_file)
-
-    # Read WAV and play using sounddevice (cross-platform)
-    data, samplerate = sf.read(wav_file, dtype="float32")
-    sd.play(data, samplerate)
-    sd.wait()
-
-    os.remove(wav_file)
+# ================= AUDIO CONTROL =================
+def stop_audio_devices():
+    try:
+        sd.stop()
+    except Exception:
+        pass
 
 
 def speak(text):
-    asyncio.run(speak_async(text))
+    stop_audio_devices()  #  MUST release mic
 
-# LISTEN ONCE
+    print("Assistant:", text)
+
+    engine = pyttsx3.init()
+    engine.setProperty("rate", 170)
+
+    engine.say(text)
+    engine.runAndWait()
+
+    engine.stop()
+    del engine
+    gc.collect()  
+
+# ================= LISTEN ONCE =================
 def listen_once():
+    recognizer.Reset()
+
+    while not audio_queue.empty():
+        audio_queue.get()
+
     print("Listening... Speak now.")
-    with sd.RawInputStream(
-            samplerate=SAMPLE_RATE,
-            blocksize=8000,
-            dtype="int16",
-            channels=1,
-            callback=audio_callback
-    ):
+
+    stream = sd.RawInputStream(
+        samplerate=SAMPLE_RATE,
+        blocksize=BLOCK_SIZE,
+        dtype="int16",
+        channels=1,
+        callback=audio_callback
+    )
+
+    with stream:
         while True:
             data = audio_queue.get()
             if recognizer.AcceptWaveform(data):
                 result = json.loads(recognizer.Result())
                 text = result.get("text", "").strip()
                 if text:
+                    stream.stop()
                     return text
 
-# MAIN LOOP
+# ================= MAIN LOOP =================
 if __name__ == "__main__":
     conversation_state = {
         "last_place": None,
@@ -89,7 +99,7 @@ if __name__ == "__main__":
             user_text = listen_once()
             print("User:", user_text)
 
-            if user_text.lower() in ["exit", "quit", "stop"]:
+            if user_text.lower() in ("exit", "quit", "stop"):
                 speak("Goodbye!")
                 break
 
