@@ -18,7 +18,7 @@ Setup Instructions
 # git clone https://github.com/GABhorkar/NaturalLangSystem.git
 cd NaturalLangSystem/nl_voice_assistant
 2. Install dependencies
-# pip install vosk sounddevice edge-tts requests python-dateutil soundfile
+# pip install vosk sounddevice pyttsx3 requests python-dateutil soundfile
 3. Verify your Python version
 # python3 --version
 	•	Recommended: Python 3.9+
