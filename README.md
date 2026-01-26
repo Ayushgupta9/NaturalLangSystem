@@ -295,8 +295,8 @@ This project is submitted as part of an academic assignment.
 
 ## Author
 
-Ganesh Bhorkar
-RWTH Aachen University
+Philipps-Universität Marburg
+Ayush kumar gupta
 
 ## Submission Information
 
