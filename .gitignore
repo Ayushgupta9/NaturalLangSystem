@@ -1,17 +1,26 @@
-# Default ignored files
-/shelf/
-/workspace.xml
-# Editor-based HTTP Client requests
-/httpRequests/
-# Datasource local storage ignored files
-/dataSources/
-/dataSources.local.xml
-# IntelliJ / PyCharm
-.idea/
-
-# Virtual environment
-.venv/
-
-# Python cache
+# Python
 __pycache__/
 *.pyc
+*.pyo
+.Python
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Vosk model (downloaded by Dockerfile)
+vosk-model-small-en-us-0.15/
+
+# Output audio files (keep only JSON)
+output/*.wav
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

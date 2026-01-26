@@ -11,7 +11,7 @@ import pyttsx3
 from assistant import handle_intent
 from nlu import parse_intent
 
-# ================= CONFIGURATION =================
+#  CONFIGURATION
 MODEL_PATH = "vosk-model-small-en-us-0.15"
 SAMPLE_RATE = 16000
 BLOCK_SIZE = 8000

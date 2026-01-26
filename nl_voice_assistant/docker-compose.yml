@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  voice-assistant:
+    build: .
+    container_name: voice_assistant
+    volumes:
+      # Mount audio samples as read-only
+      - ./audio_samples:/app/audio_samples:ro
+      # Mount output directory for results
+      - ./output:/app/output
+    environment:
+      - PYTHONUNBUFFERED=1
+      - PYTHONDONTWRITEBYTECODE=1
+    stdin_open: true
+    tty: true

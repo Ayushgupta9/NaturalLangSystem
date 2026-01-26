@@ -1,0 +1,73 @@
+[
+  {
+    "file": "01_greeting.wav",
+    "transcription": "hello",
+    "intent": {
+      "intent": "greeting"
+    },
+    "response": "Hello! How can I help you?",
+    "output_audio": "response_01_01_greeting.wav"
+  },
+  {
+    "file": "02_weather_marburg.wav",
+    "transcription": "what will the weather be like and marburg today",
+    "intent": {
+      "intent": "get_weather",
+      "place": "marburg",
+      "day": "2026-01-26"
+    },
+    "response": "The weather in marburg on Monday will be mist, between 1 and 7 degrees.",
+    "output_audio": "response_02_02_weather_marburg.wav"
+  },
+  {
+    "file": "03_check_rain.wav",
+    "transcription": "will it rained there tomorrow",
+    "intent": {
+      "intent": "check_rain",
+      "place": "marburg",
+      "day": "2026-01-27"
+    },
+    "response": "Yes, it will rain in marburg on Tuesday.",
+    "output_audio": "response_03_03_check_rain.wav"
+  },
+  {
+    "file": "04_create_appointment.wav",
+    "transcription": "add an appointment title dentist for january",
+    "intent": {
+      "intent": "create_event",
+      "title": "dentist",
+      "date": "2026-01-27"
+    },
+    "response": "I have added an appointment titled 'dentist' on Tuesday, 27 January 2026 at 09:00.",
+    "output_audio": "response_04_04_create_appointment.wav"
+  },
+  {
+    "file": "05_next_appointment.wav",
+    "transcription": "what is my next appointment",
+    "intent": {
+      "intent": "get_next_event"
+    },
+    "response": "Your next appointment is 'Untitled appointment' on Monday, 26 January 2026 at 09:00 in Office.",
+    "output_audio": "response_05_05_next_appointment.wav"
+  },
+  {
+    "file": "06_update_location.wav",
+    "transcription": "change the location to berlin",
+    "intent": {
+      "intent": "update_event_location_for_day",
+      "day": "2026-01-27",
+      "location": "berlin"
+    },
+    "response": "I have changed the location of your appointment on Tuesday, 27 January 2026 to berlin.",
+    "output_audio": "response_06_06_update_location.wav"
+  },
+  {
+    "file": "07_delete_appointment.wav",
+    "transcription": "delete the previously created appointment",
+    "intent": {
+      "intent": "delete_last_event"
+    },
+    "response": "I have deleted the previously created appointment.",
+    "output_audio": "response_07_07_delete_appointment.wav"
+  }
+]
